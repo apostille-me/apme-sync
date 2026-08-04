@@ -1,0 +1,25 @@
+# apme-sync
+
+opto-sync/syncer.rs JSON reconciliation gateway for Apostille Me.
+
+**Product:** Apostille Me — Case operations for visa and apostille consulting.
+
+Track sanitized client references, document workflows, destination jurisdictions, appointments, deadlines, and case events for a visa and apostille consulting firm.
+
+## Safety and production boundary
+
+This software is an operational starter and does not provide legal advice. Keep identity documents and sensitive case files out of logs and this bootstrap data model; production use requires encryption, access controls, retention rules, auditability, and jurisdiction-specific professional review.
+
+This repository is an executable bootstrap, not a production deployment. Before live
+use, add authentication, tenant authorization, rate limits, durable migrations,
+observability, backups, incident response, dependency review, and secret management.
+## Reconciliation contract
+
+`POST /api/v1/reconcile` accepts `{"base":...,"incoming":...}` and delegates to
+`opto-sync/syncer.rs` at immutable commit `132a97c77867128656070be85d3046b0cc065cbf`. The default policy is
+identity-keyed array merge using `id` plus last-writer-wins selectors
+`updated_at,synced_at`.
+
+The gateway is not a durable record by itself. Persist and authorize the result in
+the owning API/database transaction, enforce idempotency, and retain conflict audit
+metadata.
