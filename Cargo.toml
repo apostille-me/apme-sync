@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 axum = { version = "0.8", features = ["json"] }
-apme-interfaces = { git = "https://github.com/apostille-me/apme-interfaces", tag = "v0.1.0" }
+apme-interfaces = { git = "https://github.com/apostille-me/apme-interfaces", rev = "8e383a79a16c52d821cefe2a9f1cb160b13a85b6" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 syncer-rs = { git = "https://github.com/opto-sync/syncer.rs", rev = "132a97c77867128656070be85d3046b0cc065cbf" }
