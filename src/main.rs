@@ -47,9 +47,16 @@ async fn reconcile(
     let base = serde_json::to_string(&request.base).map_err(internal)?;
     let incoming = serde_json::to_string(&request.incoming).map_err(internal)?;
     let merged = merge_json(&base, &incoming, &state.options)
-        .map_err(|_error| (StatusCode::UNPROCESSABLE_ENTITY, Json(serde_json::json!({"error":"merge_failed"}))))?;
+        .map_err(merge_error)?;
     let merged: Value = serde_json::from_str(&merged).map_err(internal)?;
     Ok(Json(ReconcileResponse { merged, engine: "opto-sync/syncer.rs", contract: "apme_interfaces::Case" }))
+}
+
+fn merge_error(_error: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
+    (
+        StatusCode::UNPROCESSABLE_ENTITY,
+        Json(serde_json::json!({"error":"merge_failed"})),
+    )
 }
 
 fn internal(_error: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
@@ -60,6 +67,14 @@ fn internal(_error: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validation_errors_do_not_expose_merge_engine_details() {
+        let (status, Json(body)) = merge_error("case-private-error-correlation");
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert_eq!(body, serde_json::json!({"error":"merge_failed"}));
+        assert!(!body.to_string().contains("case-private"));
+    }
 
     #[test]
     fn internal_errors_never_echo_untrusted_details() {
