@@ -47,11 +47,25 @@ async fn reconcile(
     let base = serde_json::to_string(&request.base).map_err(internal)?;
     let incoming = serde_json::to_string(&request.incoming).map_err(internal)?;
     let merged = merge_json(&base, &incoming, &state.options)
-        .map_err(|error| (StatusCode::UNPROCESSABLE_ENTITY, Json(serde_json::json!({"error":"merge_failed","message":error.to_string()}))))?;
+        .map_err(|_error| (StatusCode::UNPROCESSABLE_ENTITY, Json(serde_json::json!({"error":"merge_failed"}))))?;
     let merged: Value = serde_json::from_str(&merged).map_err(internal)?;
     Ok(Json(ReconcileResponse { merged, engine: "opto-sync/syncer.rs", contract: "apme_interfaces::Case" }))
 }
 
-fn internal(error: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
-    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error":"internal","message":error.to_string()})))
+fn internal(_error: impl std::fmt::Display) -> (StatusCode, Json<Value>) {
+    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error":"internal"})))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn internal_errors_never_echo_untrusted_details() {
+        let (status, Json(body)) = internal("tenant-confidential-id-and-document");
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(body, serde_json::json!({"error":"internal"}));
+        assert!(!body.to_string().contains("tenant-confidential"));
+    }
 }
